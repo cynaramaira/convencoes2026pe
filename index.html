@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Convenções Partidárias 2026 - Blog de Jamildo</title>
+    <!-- Tailwind CSS para estilização moderna e responsiva -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts para tipografia editorial premium -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0f172a;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        
+        /* Ativação do Container Queries para adaptação perfeita do widget embarcado */
+        .widget-wrapper {
+            container-type: inline-size;
+            container-name: widget;
+        }
+
+        .font-header {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* Custom scrollbar para as áreas internas de detalhes */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d93503;
+        }
+
+        @container widget (max-width: 490px) {
+            .main-layout {
+                flex-direction: column !important;
+            }
+            .calendar-panel {
+                width: 100% !important;
+                height: 58% !important;
+                border-bottom: 1px solid rgba(51, 65, 85, 0.6) !important;
+                border-right: none !important;
+                padding: 8px !important;
+            }
+            .details-panel {
+                width: 100% !important;
+                height: 42% !important;
+                padding: 10px !important;
+            }
+            .day-card {
+                padding: 4px !important;
+            }
+            .day-number-text {
+                font-size: 10px !important;
+            }
+            .event-badge-title {
+                font-size: 7px !important;
+            }
+            .event-badge-party {
+                font-size: 9px !important;
+            }
+            .countdown-banner-text {
+                display: none !important;
+            }
+        }
+
+        /* Transição suave de seleção */
+        .day-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .day-card.active {
+            border-color: #d93503 !important;
+            box-shadow: 0 0 12px rgba(217, 53, 3, 0.35);
+            background-color: rgba(30, 41, 59, 0.9) !important;
+            transform: scale(1.02);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- CONTAINER PRINCIPAL: Otimizado e travado exatamente em 600x600 com compatibilidade de escala responsiva -->
+    <div class="widget-wrapper w-[600px] h-[600px] max-w-full max-h-[600px] bg-slate-950 rounded-2xl shadow-2xl flex flex-col justify-between overflow-hidden border border-slate-800 relative">
+        
+        <!-- HEADER COM LOGOTIPO OFICIAL DO BLOG DE JAMILDO -->
+        <header class="bg-[#1d4f80] text-white px-4 py-3 flex items-center justify-between shadow-lg shrink-0 border-b border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="h-8 flex items-center">
+                    <img src="https://jamildo.com/media/uploads/brancologojamildo.png" 
+                         referrerpolicy="no-referrer"
+                         alt="Blog de Jamildo" 
+                         class="h-7 w-auto object-contain block" 
+                         onerror="this.onerror=null; this.outerHTML='<span class=\'font-header text-base font-extrabold tracking-tight text-white\'>BLOG DE <span class=\'text-[#d93503]\'>JAMILDO</span></span>';">
+                </div>
+            </div>
+            
+            <!-- Badge de Cobertura -->
+            <div class="flex items-center gap-1.5 bg-slate-950/45 px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider text-orange-400 border border-slate-700/50">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+                <span>Eleições 2026</span>
+            </div>
+        </header>
+
+        <!-- BANNER DE CONTRASTE: PRAZO LEGAL & CONTADOR REGRESSIVO -->
+        <div class="bg-gradient-to-r from-slate-900 to-[#143c64] px-4 py-2 flex items-center justify-between text-xs text-slate-300 border-b border-slate-800 shrink-0">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-gavel text-[#d93503]"></i>
+                <span>Prazo: <strong class="text-white">20/07 a 05/08</strong></span>
+            </div>
+            <div id="countdown-banner" class="text-[10px] font-medium bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-slate-300">
+                <span class="countdown-banner-text">Próxima convenção: </span><span id="countdown-timer" class="font-bold text-[#d93503]">Carregando...</span>
+            </div>
+        </div>
+
+        <!-- ÁREA CENTRAL INTEGRADA (GRID DE 3 SEMANAS + PAINEL DE INFORMAÇÕES DETALHADAS) -->
+        <div class="main-layout flex-grow flex flex-row overflow-hidden bg-slate-900">
+            
+            <!-- COLUNA ESQUERDA: O CALENDÁRIO COM AS SEMANAS QUE IMPORTAM -->
+            <div class="calendar-panel w-[58%] p-3 flex flex-col justify-between border-r border-slate-800">
+                <div class="flex-grow flex flex-col justify-between">
+                    <!-- Dias da Semana Header -->
+                    <div class="grid grid-cols-7 text-center text-[9px] font-extrabold text-slate-500 tracking-wider mb-2">
+                        <div>DOM</div>
+                        <div>SEG</div>
+                        <div>TER</div>
+                        <div>QUA</div>
+                        <div>QUI</div>
+                        <div>SEX</div>
+                        <div>SÁB</div>
+                    </div>
+
+                    <!-- Corpo das 3 Semanas Relevantes (Gerado por JS para Julho/Agosto 2026) -->
+                    <div id="timeline-grid" class="grid grid-cols-7 gap-1 flex-grow h-full">
+                        <!-- Injetado dinamicamente via Javascript -->
+                    </div>
+                </div>
+
+                <!-- Legenda Compacta na Base do Calendário -->
+                <div class="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[9px]">
+                    <span class="text-slate-400 font-medium">Toque nos dias destacados</span>
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1 text-orange-400">
+                            <span class="w-1.5 h-1.5 rounded-full bg-[#d93503]"></span> No Prazo
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUNA DIREITA: DECK DE INFORMAÇÕES DETALHADAS -->
+            <div class="details-panel w-[42%] bg-slate-950 p-3 flex flex-col justify-between overflow-y-auto">
+                <div id="detail-card-content" class="h-full flex flex-col justify-between gap-2">
+                    <!-- Preenchido dinamicamente de acordo com o dia selecionado -->
+                    <div class="text-center py-8 text-slate-500 my-auto">
+                        <i class="fa-solid fa-calendar-day text-2xl mb-2 text-slate-600 block animate-pulse"></i>
+                        <p class="text-xs">Selecione uma data destacada no calendário para conferir os detalhes da convenção partidária.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- FOOTER / FILTRAGEM RÁPIDA -->
+        <footer class="bg-slate-950 border-t border-slate-800 px-4 py-2 flex items-center justify-between shrink-0">
+            <span class="text-[9px] text-slate-500">
+                © Blog de Jamildo 2026.
+            </span>
+            <div class="flex items-center gap-2">
+                <label for="party-filter" class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Filtrar:</label>
+                <select id="party-filter" onchange="applyFilter()" class="text-[11px] bg-slate-900 border border-slate-700 rounded-md px-2 py-0.5 font-semibold text-slate-300 outline-none focus:ring-1 focus:ring-[#d93503]">
+                    <option value="all">Todos</option>
+                    <!-- Preenchido dinamicamente -->
+                </select>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        
+        // BASE DE DADOS FACILMENTE EDITÁVEL (Modelo Google Agenda)
+        // Adicione, remova ou edite qualquer convenção abaixo seguindo as propriedades de tempo
+        const CONVENCOES = [
+            {
+                id: "conv-novo",
+                partido: "Partido NOVO",
+                sigla: "NOVO",
+                cor: "#ff8c00",       // Laranja característico do NOVO
+                textColor: "#ffffff", // Cor do texto no calendário (branco)
+                dataInicio: "2026-07-21", // Formato: AAAA-MM-DD
+                dataFim: "2026-07-21",
+                horaInicio: "09:00",
+                horaFim: "17:00",
+                local: "Sede do Partido NOVO, Recife - PE",
+                detalhes: "Convenção oficial do partido para homologação de chapas proporcionais estaduais e federais.",
+                link: "https://jamildo.com/politica/partido-novo-define-data-das-convencoes-partidarias-e-promete-fazer-surpresa-nas-eleicoes.html"
+            },
+            {
+                id: "conv-mdb",
+                partido: "MDB",
+                sigla: "MDB",
+                cor: "#15803d",       // Verde oficial do MDB
+                textColor: "#ffffff",
+                dataInicio: "2026-07-25",
+                dataFim: "2026-07-25",
+                horaInicio: "09:00",
+                horaFim: "16:00",
+                local: "Auditório Principal da ALEPE, Recife - PE",
+                detalhes: "Convenção estadual para definição de alianças e candidaturas majoritárias no estado.",
+                link: "https://jamildo.com"
+            },
+            {
+                id: "conv-psb",
+                partido: "PSB",
+                sigla: "PSB",
+                cor: "#f5b041",       // Amarelo/Dourado oficial do PSB (Diferente do Vermelho do PT)
+                textColor: "#0f172a", // Texto escuro para excelente contraste com fundo amarelo
+                dataInicio: "2026-08-01",
+                dataFim: "2026-08-02", // Evento de dois dias
+                horaInicio: "08:00",
+                horaFim: "18:00",
+                local: "Clube Português do Recife",
+                detalhes: "Grande encontro partidário para oficialização de candidaturas majoritárias e alianças de coalizão.",
+                link: "https://jamildo.com"
+            }
+        ];
+
+        // Período legal das convenções de 2026
+        const PRAZO_INICIO = new Date(2026, 6, 20); // 20 de Julho de 2026
+        const PRAZO_FIM = new Date(2026, 7, 5);     // 05 de Agosto de 2026
+
+        // Definição exata das 3 semanas cruciais em 2026 para exibição otimizada (sem espaço desperdiçado)
+        // Começa no Domingo dia 19 de Julho de 2026 e vai por 21 dias até Sábado dia 8 de Agosto de 2026
+        const TIMELINE_DAYS = [];
+        const startCalendarDate = new Date(2026, 6, 19); 
+        
+        for (let i = 0; i < 21; i++) {
+            const currentDay = new Date(startCalendarDate);
+            currentDay.setDate(startCalendarDate.getDate() + i);
+            TIMELINE_DAYS.push(currentDay);
+        }
+
+        let selectedDayStr = "2026-07-21"; // Começa pré-selecionado no dia do Partido NOVO
+        let activeFilter = 'all';
+
+        window.onload = function() {
+            renderTimelineGrid();
+            populateFilterOptions();
+            showDayDetails(selectedDayStr);
+            startCountdownTimer();
+        };
+
+        // Auxiliar para formatação padronizada de data ISO local
+        function formatDateToISO(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function renderTimelineGrid() {
+            const grid = document.getElementById('timeline-grid');
+            grid.innerHTML = '';
+
+            TIMELINE_DAYS.forEach(day => {
+                const dateISO = formatDateToISO(day);
+                const isWithinLegalWindow = day >= PRAZO_INICIO && day <= PRAZO_FIM;
+                
+                // Mapeia eventos que cruzam o dia de hoje e atendem ao filtro
+                const activeEvents = CONVENCOES.filter(evt => {
+                    const start = new Date(evt.dataInicio + "T00:00:00");
+                    const end = new Date(evt.dataFim + "T00:00:00");
+                    return day >= start && day <= end && (activeFilter === 'all' || evt.partido === activeFilter);
+                });
+
+                const hasEvent = activeEvents.length > 0;
+                
+                // Criação do container do card do dia
+                const card = document.createElement('div');
+                card.id = `day-${dateISO}`;
+                
+                let cardClasses = "day-card h-full rounded-xl flex flex-col justify-between p-2 border select-none cursor-pointer text-left relative bg-slate-950/20 ";
+                
+                if (dateISO === selectedDayStr) {
+                    cardClasses += "border-[#d93503] bg-slate-800/80 shadow-[0_0_12px_rgba(217,53,3,0.3)] z-10 scale-[1.02] ";
+                } else if (hasEvent) {
+                    cardClasses += "border-slate-700 bg-slate-900/90 hover:bg-slate-800/70 hover:scale-[1.01] ";
+                } else if (isWithinLegalWindow) {
+                    cardClasses += "border-slate-800/60 hover:bg-slate-900/30 ";
+                } else {
+                    cardClasses += "border-transparent opacity-30 hover:opacity-50 ";
+                }
+
+                card.className = cardClasses;
+                card.onclick = () => selectDay(dateISO);
+
+                // Título com número do dia e indicação de mês de transição
+                const monthLabel = day.getDate() === 1 ? 'AGO' : (day.getDate() === 19 ? 'JUL' : '');
+                const textDayColor = isWithinLegalWindow ? "text-slate-200" : "text-slate-500";
+                
+                // Correção: colocar o marcador "INÍCIO" ou "FIM" à ESQUERDA do número para não parecer que aponta para o dia seguinte
+                let badgeHTML = '';
+                if (dateISO === "2026-07-20") {
+                    badgeHTML = `<span class="text-[7px] bg-[#d93503] text-white px-1 py-0.5 rounded font-black uppercase tracking-wider scale-90 origin-left">INÍCIO</span>`;
+                } else if (dateISO === "2026-08-05") {
+                    badgeHTML = `<span class="text-[7px] bg-red-600 text-white px-1 py-0.5 rounded font-black uppercase tracking-wider scale-90 origin-left">FIM</span>`;
+                }
+
+                let dayHeaderHTML = `
+                    <div class="flex justify-between items-center w-full shrink-0">
+                        <div class="flex items-center justify-start flex-grow">${badgeHTML}</div>
+                        <span class="day-number-text text-xs font-black ${textDayColor}">${day.getDate()}<span class="text-[8px] font-bold text-slate-500 ml-0.5">${monthLabel}</span></span>
+                    </div>
+                `;
+
+                // Renderização elástica para preencher a célula sem ficar espremido embaixo
+                let dayBodyHTML = `<div class="flex-grow flex flex-col justify-center items-center w-full mt-1.5 overflow-hidden">`;
+                
+                if (hasEvent) {
+                    activeEvents.forEach(evt => {
+                        dayBodyHTML += `
+                            <div class="w-full h-full rounded-lg p-1.5 flex flex-col justify-center items-center text-center shadow-md transition-all duration-200" 
+                                 style="background-color: ${evt.cor}; color: ${evt.textColor || '#ffffff'}">
+                                <span class="event-badge-title text-[7px] opacity-90 block tracking-wider uppercase font-extrabold leading-none mb-0.5">CONVENÇÃO</span>
+                                <span class="event-badge-party text-[11px] font-black block leading-none">${evt.sigla}</span>
+                            </div>
+                        `;
+                    });
+                } else if (isWithinLegalWindow) {
+                    dayBodyHTML += `<span class="text-[7px] text-slate-600 font-extrabold tracking-wider uppercase block text-center">DISPONÍVEL</span>`;
+                }
+                dayBodyHTML += `</div>`;
+
+                card.innerHTML = dayHeaderHTML + dayBodyHTML;
+                grid.appendChild(card);
+            });
+        }
+
+        // Seleção interativa do dia
+        function selectDay(dateStr) {
+            selectedDayStr = dateStr;
+            renderTimelineGrid();
+            showDayDetails(dateStr);
+        }
+
+        function showDayDetails(dateStr) {
+            const detailContainer = document.getElementById('detail-card-content');
+            
+            const events = CONVENCOES.filter(evt => {
+                const start = new Date(evt.dataInicio + "T00:00:00");
+                const end = new Date(evt.dataFim + "T00:00:00");
+                const target = new Date(dateStr + "T00:00:00");
+                return target >= start && target <= end;
+            });
+
+            const parsedDate = new Date(dateStr + "T00:00:00");
+            const months = ["Julho", "Agosto"];
+            const formattedDateText = `${parsedDate.getDate()} de ${parsedDate.getMonth() === 6 ? months[0] : months[1]} de 2026`;
+
+            if (events.length > 0) {
+                const currentEvt = events[0]; 
+                
+                detailContainer.innerHTML = `
+                    <div class="flex flex-col gap-2 h-full justify-between animate-fade-in">
+                        <div>
+                            <div class="flex items-center gap-1.5 justify-between">
+                                <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider shadow-sm" style="background-color: ${currentEvt.cor}; color: ${currentEvt.textColor || '#ffffff'}">
+                                    ${currentEvt.partido}
+                                </span>
+                                <span class="text-[9px] text-slate-400 font-bold"><i class="fa-regular fa-calendar-days mr-1 text-[#d93503]"></i>${formattedDateText}</span>
+                            </div>
+                            
+                            <h3 class="text-xs font-black text-slate-100 leading-tight border-b border-slate-800 pb-1.5 mt-2 uppercase tracking-wide">
+                                Homologação Estadual
+                            </h3>
+                            
+                            <!-- Grade de Informações Compactas -->
+                            <div class="grid grid-cols-1 gap-1.5 text-[10px] my-2">
+                                <div class="bg-slate-900/80 p-1.5 rounded border border-slate-800/80">
+                                    <span class="text-slate-500 font-bold block mb-0.5 uppercase text-[8px] tracking-wide">Horário Oficial</span>
+                                    <span class="text-slate-200 font-bold"><i class="fa-regular fa-clock text-[#d93503] mr-1"></i>${currentEvt.horaInicio} às ${currentEvt.horaFim}</span>
+                                </div>
+                                <div class="bg-slate-900/80 p-1.5 rounded border border-slate-800/80">
+                                    <span class="text-slate-500 font-bold block mb-0.5 uppercase text-[8px] tracking-wide">Local de Encontro</span>
+                                    <span class="text-slate-200 font-bold block truncate" title="${currentEvt.local}"><i class="fa-solid fa-location-dot text-[#d93503] mr-1"></i>${currentEvt.local}</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-900/50 p-2 rounded border border-slate-800/60 text-[9px] text-slate-300 leading-relaxed max-h-[75px] overflow-y-auto">
+                                <p class="font-bold text-slate-400 uppercase text-[8px] tracking-wider mb-0.5">Pauta Prevista:</p>
+                                ${currentEvt.detalhes}
+                            </div>
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-800 flex items-center justify-between mt-1">
+                            <span class="text-[8px] text-slate-500 uppercase font-bold tracking-widest">Cobertura Jamildo</span>
+                            <a href="${currentEvt.link}" target="_blank" class="inline-flex items-center gap-1 text-[9px] font-bold text-white bg-[#d93503] hover:bg-orange-700 transition-colors px-2 py-1 rounded">
+                                Ver Matéria <i class="fa-solid fa-arrow-right text-[8px]"></i>
+                            </a>
+                        </div>
+                    </div>
+                `;
+            } else {
+                detailContainer.innerHTML = `
+                    <div class="flex flex-col justify-between h-full">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <span class="px-2 py-0.5 rounded bg-slate-900 text-slate-400 text-[9px] font-bold">AGENDA LIVRE</span>
+                                <span class="text-[9px] text-slate-500 font-bold">${formattedDateText}</span>
+                            </div>
+                            <h3 class="text-xs font-bold text-slate-300 mt-3 mb-2">Sem convenções programadas</h3>
+                            <p class="text-[9.5px] text-slate-400 leading-relaxed bg-slate-900/40 p-2 rounded border border-slate-800/60">
+                                Nenhum partido registrou convenção oficial para esta data em nosso sistema até o momento. O limite estabelecido pela Justiça Eleitoral para eventos partidários vai de 20 de julho a 5 de agosto.
+                            </p>
+                        </div>
+                        <div class="text-[8px] text-slate-600 text-center uppercase tracking-widest pt-2 border-t border-slate-900/40">
+                            Blog de Jamildo • Cobertura 2026
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Filtro de partidos na base
+        function populateFilterOptions() {
+            const filterSelect = document.getElementById('party-filter');
+            const partidos = [...new Set(CONVENCOES.map(evt => evt.partido))];
+            
+            partidos.forEach(partido => {
+                const opt = document.createElement('option');
+                opt.value = partido;
+                opt.textContent = partido;
+                filterSelect.appendChild(opt);
+            });
+        }
+
+        function applyFilter() {
+            activeFilter = document.getElementById('party-filter').value;
+            renderTimelineGrid();
+            selectDay(selectedDayStr);
+        }
+
+        // Cronômetro regressivo da barra superior
+        function startCountdownTimer() {
+            function updateTimer() {
+                const now = new Date().getTime();
+                
+                const upcomingConventions = CONVENCOES.map(c => ({
+                    partido: c.sigla,
+                    time: new Date(`${c.dataInicio}T${c.horaInicio}:00`).getTime()
+                })).filter(c => c.time > now).sort((a, b) => a.time - b.time);
+
+                if (upcomingConventions.length === 0) {
+                    document.getElementById('countdown-banner').innerHTML = "Janela de convenções em andamento!";
+                    return;
+                }
+
+                const nextConv = upcomingConventions[0];
+                const distance = nextConv.time - now;
+
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+
+                let countdownStr = "";
+                if (days > 0) {
+                    countdownStr += `${days}d `;
+                }
+                countdownStr += `${hours}h ${minutes}m (${nextConv.partido})`;
+
+                document.getElementById('countdown-timer').textContent = countdownStr;
+            }
+
+            updateTimer();
+            setInterval(updateTimer, 60000);
+        }
+    </script>
+</body>
+</html>
