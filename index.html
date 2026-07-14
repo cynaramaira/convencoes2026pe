@@ -70,11 +70,9 @@
             .day-number-text {
                 font-size: 10px !important;
             }
-            .event-badge-title {
-                font-size: 7px !important;
-            }
             .event-badge-party {
-                font-size: 9px !important;
+                font-size: 8px !important;
+                padding: 2px !important;
             }
             .countdown-banner-text {
                 display: none !important;
@@ -198,16 +196,30 @@
         // Adicione, remova ou edite qualquer convenção abaixo seguindo as propriedades de tempo
         const CONVENCOES = [
             {
+                id: "conv-republicanos",
+                partido: "Republicanos",
+                sigla: "REP",
+                cor: "#005eaa",       // Azul oficial do Republicanos
+                textColor: "#ffffff",
+                dataInicio: "2026-07-21", // Mesma data do NOVO, porém inicia mais cedo (14:00)
+                dataFim: "2026-07-21",
+                horaInicio: "14:00",
+                horaFim: "17:00",
+                local: "Flat Metropolis, Ilha do Leite, Recife - PE",
+                detalhes: "Convenção estadual para homologação de chapas proporcionais e definição de diretrizes partidárias.",
+                link: "https://jamildo.com"
+            },
+            {
                 id: "conv-novo",
                 partido: "Partido NOVO",
                 sigla: "NOVO",
                 cor: "#ff8c00",       // Laranja característico do NOVO
                 textColor: "#ffffff", // Cor do texto no calendário (branco)
-                dataInicio: "2026-07-21", // Formato: AAAA-MM-DD
+                dataInicio: "2026-07-21", 
                 dataFim: "2026-07-21",
-                horaInicio: "17:00",
+                horaInicio: "17:00",  // Inicia mais tarde (17:00)
                 horaFim: "20:00",
-                local: "Clube Internacional- Rua Benfica, 505, Recife",
+                local: "Clube Internacional - Rua Benfica, 505, Recife",
                 detalhes: "Convenção oficial do partido para homologação de chapas proporcionais estaduais e federais.",
                 link: "https://jamildo.com/politica/partido-novo-define-data-das-convencoes-partidarias-e-promete-fazer-surpresa-nas-eleicoes.html"
             },
@@ -238,20 +250,6 @@
                 local: "Clube Português do Recife",
                 detalhes: "Grande encontro partidário para oficialização de candidaturas majoritárias e alianças de coalizão.",
                 link: "https://jamildo.com/politica/convencao-do-psb-que-oficializara-joao-campos-como-candidato-ao-governo-ja-tem-data-oficial-veja.html"
-            },
-            {
-                id: "conv-republicanos",
-                partido: "Republicanos",
-                sigla: "REP",
-                cor: "#005eaa",      
-                textColor: "#0f172a", // Texto escuro para excelente contraste com fundo amarelo
-                dataInicio: "2026-07-21",
-                dataFim: "2026-07-21", // Evento de dois dias
-                horaInicio: "14:00",
-                horaFim: "17:00",
-                local: "Flat Metropolis, Ilha do Leite, no Recife,",
-                detalhes: ".",
-                link: ""
             }
         ];
 
@@ -270,7 +268,8 @@
             TIMELINE_DAYS.push(currentDay);
         }
 
-        let selectedDayStr = "2026-07-21"; // Começa pré-selecionado no dia do Partido NOVO
+        let selectedDayStr = "2026-07-21"; // Começa pré-selecionado no dia de início
+        let selectedEventId = "conv-republicanos"; // ID da convenção pré-selecionada no dia
         let activeFilter = 'all';
 
         window.onload = function() {
@@ -280,7 +279,7 @@
             startCountdownTimer();
         };
 
-        // Auxiliar para formatação padronizada de data ISO local
+        // Auxiliar para formatação padronizada de data ISO local (evita divergências de timezone)
         function formatDateToISO(date) {
             const y = date.getFullYear();
             const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -298,10 +297,13 @@
                 
                 // Mapeia eventos que cruzam o dia de hoje e atendem ao filtro
                 const activeEvents = CONVENCOES.filter(evt => {
-                    const start = new Date(evt.dataInicio + "T00:00:00");
-                    const end = new Date(evt.dataFim + "T00:00:00");
-                    return day >= start && day <= end && (activeFilter === 'all' || evt.partido === activeFilter);
+                    const startStr = evt.dataInicio;
+                    const endStr = evt.dataFim;
+                    return dateISO >= startStr && dateISO <= endStr && (activeFilter === 'all' || evt.partido === activeFilter || evt.sigla === activeFilter);
                 });
+
+                // Ordena eventos do dia por hora de início de forma ascendente
+                activeEvents.sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
 
                 const hasEvent = activeEvents.length > 0;
                 
@@ -316,7 +318,7 @@
                 } else if (hasEvent) {
                     cardClasses += "border-slate-700 bg-slate-900/90 hover:bg-slate-800/70 hover:scale-[1.01] ";
                 } else if (isWithinLegalWindow) {
-                    cardClasses += "border-slate-800/60 hover:bg-slate-900/30 ";
+                    cardClasses += "border-slate-800/60 border-dashed hover:bg-slate-900/30 ";
                 } else {
                     cardClasses += "border-transparent opacity-30 hover:opacity-50 ";
                 }
@@ -328,7 +330,7 @@
                 const monthLabel = day.getDate() === 1 ? 'AGO' : (day.getDate() === 19 ? 'JUL' : '');
                 const textDayColor = isWithinLegalWindow ? "text-slate-200" : "text-slate-500";
                 
-                // Correção: colocar o marcador "INÍCIO" ou "FIM" à ESQUERDA do número para não parecer que aponta para o dia seguinte
+                // Badge de marcação de Início ou Fim do prazo legal do TSE
                 let badgeHTML = '';
                 if (dateISO === "2026-07-20") {
                     badgeHTML = `<span class="text-[7px] bg-[#d93503] text-white px-1 py-0.5 rounded font-black uppercase tracking-wider scale-90 origin-left">INÍCIO</span>`;
@@ -344,20 +346,19 @@
                 `;
 
                 // Renderização elástica para preencher a célula sem ficar espremido embaixo
-                let dayBodyHTML = `<div class="flex-grow flex flex-col justify-center items-center w-full mt-1.5 overflow-hidden">`;
+                let dayBodyHTML = `<div class="flex-grow flex flex-col justify-center gap-1 w-full mt-1.5 overflow-hidden">`;
                 
                 if (hasEvent) {
                     activeEvents.forEach(evt => {
                         dayBodyHTML += `
-                            <div class="w-full h-full rounded-lg p-1.5 flex flex-col justify-center items-center text-center shadow-md transition-all duration-200" 
+                            <div class="w-full rounded p-1 flex items-center justify-center text-center shadow-md border border-black/10 transition-all duration-200" 
                                  style="background-color: ${evt.cor}; color: ${evt.textColor || '#ffffff'}">
-                                <span class="event-badge-title text-[7px] opacity-90 block tracking-wider uppercase font-extrabold leading-none mb-0.5">CONVENÇÃO</span>
-                                <span class="event-badge-party text-[11px] font-black block leading-none">${evt.sigla}</span>
+                                <span class="event-badge-party text-[10px] font-black tracking-wide leading-none">${evt.sigla}</span>
                             </div>
                         `;
                     });
                 } else if (isWithinLegalWindow) {
-                    dayBodyHTML += `<span class="text-[7px] text-slate-600 font-extrabold tracking-wider uppercase block text-center">DISPONÍVEL</span>`;
+                    dayBodyHTML += `<span class="text-[7px] text-slate-700 font-extrabold tracking-wider uppercase block text-center">LIVRE</span>`;
                 }
                 dayBodyHTML += `</div>`;
 
@@ -369,30 +370,76 @@
         // Seleção interativa do dia
         function selectDay(dateStr) {
             selectedDayStr = dateStr;
+            
+            // Filtra e ordena eventos deste dia selecionado
+            const dayEvents = CONVENCOES.filter(evt => {
+                const startStr = evt.dataInicio;
+                const endStr = evt.dataFim;
+                return dateStr >= startStr && dateStr <= endStr;
+            });
+            dayEvents.sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
+
+            // Define por padrão o ID do primeiro evento cronológico como selecionado
+            if (dayEvents.length > 0) {
+                selectedEventId = dayEvents[0].id;
+            } else {
+                selectedEventId = null;
+            }
+
             renderTimelineGrid();
             showDayDetails(dateStr);
+        }
+
+        // Permite alternar entre os múltiplos eventos exibidos no painel de detalhes do mesmo dia
+        function selectEvent(eventId) {
+            selectedEventId = eventId;
+            showDayDetails(selectedDayStr);
         }
 
         function showDayDetails(dateStr) {
             const detailContainer = document.getElementById('detail-card-content');
             
             const events = CONVENCOES.filter(evt => {
-                const start = new Date(evt.dataInicio + "T00:00:00");
-                const end = new Date(evt.dataFim + "T00:00:00");
-                const target = new Date(dateStr + "T00:00:00");
-                return target >= start && target <= end;
+                const startStr = evt.dataInicio;
+                const endStr = evt.dataFim;
+                return dateStr >= startStr && dateStr <= endStr;
             });
+
+            // Ordena os eventos por hora de início
+            events.sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
 
             const parsedDate = new Date(dateStr + "T00:00:00");
             const months = ["Julho", "Agosto"];
             const formattedDateText = `${parsedDate.getDate()} de ${parsedDate.getMonth() === 6 ? months[0] : months[1]} de 2026`;
 
             if (events.length > 0) {
-                const currentEvt = events[0]; 
+                // Encontra a convenção selecionada ou aponta para a primeira do dia de forma segura
+                const currentEvt = events.find(e => e.id === selectedEventId) || events[0]; 
+                
+                // Gera sub-abas horizontais de navegação caso o dia contenha múltiplos eventos partidários
+                let subTabsHTML = '';
+                if (events.length > 1) {
+                    subTabsHTML = `<div class="flex gap-1 mb-2 bg-slate-900 p-1 rounded-lg border border-slate-800 shrink-0">`;
+                    events.forEach(evt => {
+                        const isCurrent = evt.id === currentEvt.id;
+                        const tabBtnClass = isCurrent 
+                            ? "bg-[#d93503] text-white shadow-md font-extrabold" 
+                            : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50";
+                        subTabsHTML += `
+                            <button onclick="selectEvent('${evt.id}')" class="flex-1 text-[10px] py-1 px-1.5 rounded-md transition-all truncate text-center ${tabBtnClass}">
+                                ${evt.horaInicio} - ${evt.sigla}
+                            </button>
+                        `;
+                    });
+                    subTabsHTML += `</div>`;
+                }
                 
                 detailContainer.innerHTML = `
                     <div class="flex flex-col gap-2 h-full justify-between animate-fade-in">
                         <div>
+                            <!-- Seletor de múltiplas convenções do mesmo dia -->
+                            ${subTabsHTML}
+
                             <div class="flex items-center gap-1.5 justify-between">
                                 <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider shadow-sm" style="background-color: ${currentEvt.cor}; color: ${currentEvt.textColor || '#ffffff'}">
                                     ${currentEvt.partido}
@@ -422,7 +469,7 @@
                             </div>
                         </div>
 
-                        <div class="pt-2 border-t border-slate-800 flex items-center justify-between mt-1">
+                        <div class="pt-2 border-t border-slate-800 flex items-center justify-between mt-1 shrink-0">
                             <span class="text-[8px] text-slate-500 uppercase font-bold tracking-widest">Cobertura Jamildo</span>
                             <a href="${currentEvt.link}" target="_blank" class="inline-flex items-center gap-1 text-[9px] font-bold text-white bg-[#d93503] hover:bg-orange-700 transition-colors px-2 py-1 rounded">
                                 Ver Matéria <i class="fa-solid fa-arrow-right text-[8px]"></i>
@@ -454,7 +501,7 @@
         // Filtro de partidos na base
         function populateFilterOptions() {
             const filterSelect = document.getElementById('party-filter');
-            const partidos = [...new Set(CONVENCOES.map(evt => evt.partido))];
+            const partidos = [...new Set(CONVENCOES.map(evt => evt.sigla))];
             
             partidos.forEach(partido => {
                 const opt = document.createElement('option');
